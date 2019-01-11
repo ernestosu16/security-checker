@@ -97,9 +97,17 @@ class Crawler
             ],
         ];
 
-        # add support for the proxy check
-        if ($proxy = getenv('HTTPS_PROXY')) {
-            $opts['http']['proxy'] = preg_replace("/^(https|http)/i", "tcp", $proxy);;
+        $proxy = getenv('HTTPS_PROXY');
+        if ($proxy) {
+            $parts = parse_url($proxy);
+            if (!is_array($parts) || (!isset($parts['path']) && !isset($parts['host']))) {
+                throw new RuntimeException(sprintf('Failed to parse HTTPS_PROXY "%s".', $proxy));
+            }
+            $opts['http']['proxy'] = sprintf(
+                '%s:%d',
+                isset($parts['host']) ? $parts['host'] : $parts['path'],
+                isset($parts['port']) ? $parts['port'] : 80
+            );
         }
 
         $caPathOrFile = CaBundle::getSystemCaRootBundlePath();
